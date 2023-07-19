@@ -16,12 +16,12 @@ const { isAuthenticated } = require("../middleware/jwt.middleware.js");
 // How many rounds should bcrypt run the salt (default - 10 rounds)
 const saltRounds = 10;
 
-// POST /auth/signup  - Creates a new user in the database
-router.post("/signup", (req, res, next) => {
-  const { email, password, name } = req.body;
+// POST /auth/register  - Creates a new user in the database
+router.post("/register", (req, res, next) => {
+  const { email, password, name, username } = req.body;
 
   // Check if email or password or name are provided as empty strings
-  if (email === "" || password === "" || name === "") {
+  if (email === "" || password === "" || name === "" || username === "") {
     res.status(400).json({ message: "Provide email, password and name" });
     return;
   }
@@ -58,7 +58,11 @@ router.post("/signup", (req, res, next) => {
 
       // Create the new user in the database
       // We return a pending promise, which allows us to chain another `then`
-      return User.create({ email, password: hashedPassword, name });
+      return User.create({
+        email,
+        password: hashedPassword,
+        username,
+      });
     })
     .then((createdUser) => {
       // Deconstruct the newly created user object to omit the password
@@ -74,18 +78,18 @@ router.post("/signup", (req, res, next) => {
     .catch((err) => next(err)); // In this case, we send error handling to the error handling middleware.
 });
 
-// POST  /auth/login - Verifies email and password and returns a JWT
+// POST  /api/login - Verifies email and password and returns a JWT
 router.post("/login", (req, res, next) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
 
-  // Check if email or password are provided as empty string
-  if (email === "" || password === "") {
-    res.status(400).json({ message: "Provide email and password." });
+  // Check if username or password are provided as empty string
+  if (username === "" || password === "") {
+    res.status(400).json({ message: "Provide username and password." });
     return;
   }
 
   // Check the users collection if a user with the same email exists
-  User.findOne({ email })
+  User.findOne({ username })
     .then((foundUser) => {
       if (!foundUser) {
         // If the user is not found, send an error response
