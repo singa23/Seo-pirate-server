@@ -132,4 +132,8 @@ router.get("/verify", isAuthenticated, (req, res, next) => {
   res.status(200).json(req.payload);
 });
 
+router.get("/homepage", isAuthenticated, (req, res, next) => {
+  res.status(200).json({ message: "Welcome to the homepage!" });
+});
+
 module.exports = router;
