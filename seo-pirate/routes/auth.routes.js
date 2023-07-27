@@ -16,13 +16,40 @@ const { isAuthenticated } = require("../middleware/jwt.middleware.js");
 // How many rounds should bcrypt run the salt (default - 10 rounds)
 const saltRounds = 10;
 
+router.put("/user/:id", isAuthenticated, (req, res, next) => {
+  const userId = req.params.id;
+  const { username, password } = req.body;
+
+  let updateData = { username };
+
+  if (password) {
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    updateData.password = hashedPassword;
+  }
+
+  User.findByIdAndUpdate(userId, updateData, { new: true })
+    .then((updatedUser) => {
+      const { _id, email, username } = updatedUser;
+      const payload = { _id, email, username };
+      const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+        algorithm: "HS256",
+        expiresIn: "6h",
+      });
+      res.status(200).json({ user: updatedUser, authToken: authToken });
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
 // POST /auth/register  - Creates a new user in the database
 router.post("/register", (req, res, next) => {
-  const { email, password, name, username } = req.body;
+  const { email, password, username } = req.body;
 
   // Check if email or password or name are provided as empty strings
-  if (email === "" || password === "" || name === "" || username === "") {
-    res.status(400).json({ message: "Provide email, password and name" });
+  if (email === "" || password === "" || username === "") {
+    res.status(400).json({ message: "Provide email, password and username" });
     return;
   }
 
@@ -66,15 +93,15 @@ router.post("/register", (req, res, next) => {
     })
     .then((createdUser) => {
       // Deconstruct the newly created user object to omit the password
-      // We should never expose passwords publicly
-      const { email, name, _id } = createdUser;
+      const { email, username, _id } = createdUser;
 
       // Create a new object that doesn't expose the password
-      const user = { email, name, _id };
+      const user = { email, username, _id };
 
       // Send a json response containing the user object
       res.status(201).json({ user: user });
     })
+
     .catch((err) => next(err)); // In this case, we send error handling to the error handling middleware.
 });
 
@@ -102,10 +129,10 @@ router.post("/login", (req, res, next) => {
 
       if (passwordCorrect) {
         // Deconstruct the user object to omit the password
-        const { _id, email, name } = foundUser;
+        const { _id, email, username } = foundUser;
 
         // Create an object that will be set as the token payload
-        const payload = { _id, email, name };
+        const payload = { _id, email, username };
 
         // Create a JSON Web Token and sign it
         const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
