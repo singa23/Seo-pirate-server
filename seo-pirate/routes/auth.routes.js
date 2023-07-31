@@ -10,6 +10,10 @@ const jwt = require("jsonwebtoken");
 // Require the User model in order to interact with the database
 const User = require("../models/User.model");
 
+const Website = require("../models/Website.model");
+
+const scraper = require("seo-scraper");
+
 // Require necessary (isAuthenticated) middleware in order to control access to specific routes
 const { isAuthenticated } = require("../middleware/jwt.middleware.js");
 
@@ -161,6 +165,68 @@ router.get("/verify", isAuthenticated, (req, res, next) => {
 
 router.get("/homepage", isAuthenticated, (req, res, next) => {
   res.status(200).json({ message: "Welcome to the homepage!" });
+});
+
+router.post("/websites", isAuthenticated, async (req, res, next) => {
+  const { name, url, userId } = req.body;
+
+  try {
+    const seodatas = await scraper.scrape({ url });
+
+    const newWebsite = await Website.create({ name, url, userId, seodatas });
+
+    res.status(201).json(newWebsite);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/websites/:id", isAuthenticated, (req, res, next) => {
+  const { id } = req.params;
+
+  Website.findById(id)
+    .then(async (foundWebsite) => {
+      const elements = await scraper.scrape({ url: foundWebsite.url });
+
+      foundWebsite.seodatas = elements;
+
+      foundWebsite
+        .save()
+        .then((updatedWebsite) => {
+          res.status(200).json(updatedWebsite);
+        })
+        .catch((error) => {
+          next(error);
+        });
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
+router.put("/websites/:id", isAuthenticated, (req, res, next) => {
+  const { id } = req.params;
+  const { name, url, seodatas } = req.body;
+
+  Website.findByIdAndUpdate(id, { name, url, seodatas }, { new: true })
+    .then((updatedWebsite) => {
+      res.status(200).json(updatedWebsite);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
+router.delete("/websites/:id", isAuthenticated, (req, res, next) => {
+  const { id } = req.params;
+
+  Website.findByIdAndRemove(id)
+    .then(() => {
+      res.status(204).json();
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
 module.exports = router;

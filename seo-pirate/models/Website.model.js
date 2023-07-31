@@ -1,12 +1,10 @@
 const { Schema, model } = require("mongoose");
 
-// Project model
-
 const websiteSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, "Project name is required."],
+      required: [true, "Website name is required."],
     },
     url: {
       type: String,
@@ -18,8 +16,22 @@ const websiteSchema = new Schema(
       required: [true, "User ID is required."],
     },
     seodatas: {
-      title: String,
-      metaDescription: String,
+      title: [String],
+      description: [String],
+      h1: [String],
+      h2: [String],
+      h3: [String],
+      h4: [String],
+      h5: [String],
+      h6: [String],
+      robots: [String],
+      links: [String],
+      canonical: [String],
+      alternateMobile: [String],
+      prevPagination: [String],
+      nextPagination: [String],
+      amp: [String],
+      hreflang: [String],
     },
   },
   {
