@@ -180,6 +180,15 @@ router.post("/websites", isAuthenticated, async (req, res, next) => {
     next(error);
   }
 });
+router.get("/websites", isAuthenticated, (req, res, next) => {
+  Website.find()
+    .then((websites) => {
+      res.status(200).json(websites);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 
 router.get("/websites/:id", isAuthenticated, (req, res, next) => {
   const { id } = req.params;
