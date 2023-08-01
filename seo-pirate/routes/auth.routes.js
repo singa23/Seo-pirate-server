@@ -181,7 +181,9 @@ router.post("/websites", isAuthenticated, async (req, res, next) => {
   }
 });
 router.get("/websites", isAuthenticated, (req, res, next) => {
-  Website.find()
+  const userId = req.payload._id;
+
+  Website.find({ userId: userId })
     .then((websites) => {
       res.status(200).json(websites);
     })
